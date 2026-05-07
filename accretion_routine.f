@@ -14,14 +14,19 @@ module run_star_extras
       call star_ptr(id, s, ierr)
       if (ierr /= 0) return
       extras_check_model = keep_going  
-   
+      
+      !star the accretion routine
+      
       if (s% x_logical_ctrl(10)) then
+         ! if not constant accretion selects when  the accretion event starts
+         
          !if (s% center_h1<=0.65 .and. step_mod==0 .and.m_buff_i==0) then
          if (s% star_age>=10d9 .and. step_mod==0 .and.m_buff_i==0) then
             !write (*,*) 'Accretion started !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
             m_buff_i= s% mstar/m_sol
             m_buff_t= s% mstar/m_sol
             step_mod=step_mod+1
+            !during high accretion rate the time step need to be forced to be small to avoid divergence of the stellar modes
             s% max_years_for_timestep = 1d4
             s% mass_change=1.d-10!step_mod*1.d-13
             Dt_accretion=1.0
@@ -33,6 +38,7 @@ module run_star_extras
                s% accretion_he4 = 0.287140006
                s% accretion_zfracs = -1
             endif
+         !! Moment that accretion event stop in the stellar model
          elseif (s% x_logical_ctrl(10) .and.  step_mod == 1  .and. (m_buff_t-m_buff_i)>=s% x_ctrl(4)*m_buff_earth ) then
             !write (*,*) 'Accretion stopped !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
             s% mass_change=0
@@ -40,6 +46,7 @@ module run_star_extras
             s% force_timestep_min_years = 1d7
             step_mod=step_mod+1
    
+         !! restore the time steps after accretion, to avoid long computations
          elseif (s% x_logical_ctrl(10) .and. step_mod>=2 .and.  step_mod <= 4) then
             s% max_years_for_timestep = 0
             step_mod=step_mod+1
